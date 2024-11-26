@@ -1,3 +1,7 @@
+<script module lang="ts">
+	export type Security = (typeof securities)[number];
+</script>
+
 <script lang="ts">
 	import securities from '$lib/securities/aggregated.json';
 	import * as Table from '$lib/components/ui/table';
@@ -5,16 +9,17 @@
 	import { Input } from '$lib/components/ui/input';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Pagination from '$lib/components/ui/pagination';
+	import { Badge } from '$lib/components/ui/badge';
+	import DataTableActions from '$lib/components/data-table-actions.svelte';
 
-	import { createTable, Render, Subscribe } from 'svelte-headless-table';
+	import { createTable, createRender, Render, Subscribe } from 'svelte-headless-table';
 	import {
 		addPagination,
 		addSortBy,
 		addTableFilter,
-		addHiddenColumns,
-		addResizedColumns
+		addHiddenColumns
 	} from 'svelte-headless-table/plugins';
-	import { readable } from 'svelte/store';
+	import { writable } from 'svelte/store';
 	import { ArrowUpDown, ChevronDown } from 'lucide-svelte';
 
 	const percentFormatter = new Intl.NumberFormat(undefined, {
@@ -29,28 +34,58 @@
 		currencyDisplay: 'narrowSymbol'
 	});
 
-	const table = createTable(readable(securities), {
+	const numberFormatter = new Intl.NumberFormat(undefined, {
+		style: 'decimal',
+		maximumFractionDigits: 2
+	});
+
+	const securitiesStore = writable(securities);
+
+	const table = createTable(securitiesStore, {
 		page: addPagination(),
-		sort: addSortBy(),
+		sort: addSortBy({
+			initialSortKeys: [{ id: 'h', order: 'desc' }]
+		}),
 		filter: addTableFilter({
 			fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
 		}),
-		hide: addHiddenColumns(),
-		resize: addResizedColumns()
+		hide: addHiddenColumns()
 	});
 
+	let h: (s: Security) => number = $state(() => 0);
+
+	let hString = $state('');
+
+	function onHeuristicChange() {
+		try {
+			const fn = eval(`(s) => ${hString}`);
+
+			if (typeof fn === 'function') {
+				h = fn;
+				securitiesStore.update((securities) => securities);
+			}
+		} catch {}
+	}
+
 	const columns = table.createColumns([
+		table.column({
+			accessor: (s: Security) => h(s),
+			id: 'h',
+			header: 'H',
+			cell: ({ value }) => {
+				return numberFormatter.format(value);
+			}
+		}),
 		table.column({
 			accessor: 'symbol',
 			header: 'Symbol'
 		}),
 		table.column({
-			accessor: 'name',
-			header: 'Name'
-		}),
-		table.column({
 			accessor: 'price',
-			header: 'Price'
+			header: 'Price',
+			cell: ({ value }) => {
+				return currencyFormatter.format(value);
+			}
 		}),
 		table.column({
 			accessor: 'sector',
@@ -75,6 +110,17 @@
 			header: 'Market Cap',
 			cell: ({ value }) => {
 				return value === 0 ? 'N/A' : currencyFormatter.format(value);
+			}
+		}),
+		table.column({
+			accessor: 'name',
+			header: 'Name'
+		}),
+		table.column({
+			accessor: (s) => s,
+			header: '',
+			cell: ({ value }) => {
+				return createRender(DataTableActions, { security: value });
 			}
 		})
 	]);
@@ -102,18 +148,35 @@
 	});
 
 	const hidableCols = [
-		'name',
+		'symbol',
 		'price',
 		'sector',
 		'dividendYield',
 		'peRatio',
-		'MarketCapAllClasses'
+		'MarketCapAllClasses',
+		'name'
 	];
 </script>
 
 <div class="p-4">
 	<div class="flex items-center pb-4">
 		<Input class="max-w-sm" placeholder="Filter content..." type="text" bind:value={$filterValue} />
+
+		<div class="mx-auto">
+			<Input
+				class="mb-2"
+				placeholder="s.dividendYield - Math.sqrt(s.peRatio)"
+				type="text"
+				bind:value={hString}
+				onfocusout={onHeuristicChange}
+			/>
+
+			<div class="flex flex-wrap gap-1">
+				{#each hidableCols as col}
+					<Badge>{col}</Badge>
+				{/each}
+			</div>
+		</div>
 
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
@@ -172,7 +235,7 @@
 						<Table.Row {...rowAttrs}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
-									<Table.Cell {...attrs}>
+									<Table.Cell {...attrs} class="truncate">
 										<Render of={cell.render()} />
 									</Table.Cell>
 								</Subscribe>
@@ -201,7 +264,7 @@
 							<Pagination.Ellipsis />
 						</Pagination.Item>
 					{:else}
-						<Pagination.Item class={currentPage === page.value ? '' : 'hidden'}>
+						<Pagination.Item>
 							<Pagination.Link {page} isActive={currentPage == page.value}>
 								{page.value}
 							</Pagination.Link>
