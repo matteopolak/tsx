@@ -52,6 +52,8 @@
 		hide: addHiddenColumns()
 	});
 
+	console.log($securitiesStore);
+
 	let h: (s: Security) => number = $state(() => 0);
 
 	let hString = $state('');

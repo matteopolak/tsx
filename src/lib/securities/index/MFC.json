@@ -23,7 +23,7 @@
 	"dividendAmount": 0.44,
 	"dividendCurrency": "CAD",
 	"beta": 1.082681,
-	"eps": 2.66,
+	"eps": null,
 	"exDividendDate": "2025-05-21 00:00:00.0",
 	"longDescription": "Manulife provides life insurance and wealth management products and services to individuals and group customers in Canada, the United States, and Asia. Manulife is one of Canada's Big Three Life Insurance companies (the other two are Sun Life and Great West Life). As of Dec. 31, 2021, Manulife reported assets under management or administration of about CAD $1.4 trillion.",
 	"fulldescription": "Manulife provides life insurance and wealth management products and services to individuals and group customers in Canada, the United States, and Asia. Manulife is one of Canada's Big Three Life Insurance companies (the other two are Sun Life and Great West Life). As of Dec. 31, 2021, Manulife reported assets under management or administration of about CAD $1.4 trillion.",
