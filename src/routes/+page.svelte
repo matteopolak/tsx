@@ -44,15 +44,13 @@
 	const table = createTable(securitiesStore, {
 		page: addPagination(),
 		sort: addSortBy({
-			initialSortKeys: [{ id: 'h', order: 'desc' }]
+			initialSortKeys: []
 		}),
 		filter: addTableFilter({
 			fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
 		}),
 		hide: addHiddenColumns()
 	});
-
-	console.log($securitiesStore);
 
 	let h: (s: Security) => number = $state(() => 0);
 
@@ -94,7 +92,7 @@
 			header: 'Sector'
 		}),
 		table.column({
-			accessor: (c) => (typeof c.dividendYield !== 'number' ? null : c.dividendYield),
+			accessor: (c) => (typeof c.dividendYield !== 'number' ? -1 : c.dividendYield),
 			header: 'Yield (Annual)',
 			cell: ({ value }) => {
 				return typeof value !== 'number' ? 'N/A' : percentFormatter.format(value / 100);
@@ -223,6 +221,7 @@
 										<Button variant="ghost" on:click={props.sort.toggle}>
 											<Render of={cell.render()} />
 											<ArrowUpDown class={'ml-2 h-4 w-4'} />
+											{props.sort.order}
 										</Button>
 									</Table.Head>
 								</Subscribe>
